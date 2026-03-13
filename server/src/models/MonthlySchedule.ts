@@ -4,7 +4,7 @@ export type DayType = 'study' | 'mock' | 'revision' | 'catchup';
 
 export interface ICycleDay {
     dayOfWeek: number; // 0 = Sunday
-    type: DayType;
+    types: DayType[];
     subjects: string[];
     focusLabel?: string;
     dailyStudyHours?: number; // Target hours for this day of the week
@@ -24,7 +24,7 @@ export interface IMonthlySchedule extends Document {
 
 const CycleDaySchema = new Schema<ICycleDay>({
     dayOfWeek: { type: Number, required: true, min: 0, max: 6 },
-    type: { type: String, enum: ['study', 'mock', 'revision', 'catchup'], required: true },
+    types: [{ type: String, enum: ['study', 'mock', 'revision', 'catchup'] }],
     subjects: [String],
     focusLabel: String,
     dailyStudyHours: { type: Number, default: 3 },

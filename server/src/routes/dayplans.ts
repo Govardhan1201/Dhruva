@@ -30,7 +30,7 @@ router.get('/:date', requireAuth, async (req: Request, res: Response) => {
                     userId: user._id,
                     scheduleId: user.scheduleId,
                     date,
-                    dayType: cycleDay?.type || 'study',
+                    dayTypes: cycleDay?.types || ['study'],
                     taskIds: [],
                     catchupTaskIds: [],
                     practiceLog: [],
@@ -44,7 +44,7 @@ router.get('/:date', requireAuth, async (req: Request, res: Response) => {
             dayPlan = {
                 _id: null,
                 date: date.toISOString(),
-                dayType: 'study',
+                dayTypes: ['study'],
                 targetStudyHours: 3,
                 practiceLog: [],
                 taskIds: [],

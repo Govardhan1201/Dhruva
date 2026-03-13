@@ -10,7 +10,7 @@ export interface IDayPlan extends Document {
     userId: mongoose.Types.ObjectId;
     scheduleId: mongoose.Types.ObjectId;
     date: Date;
-    dayType: DayType;
+    dayTypes: DayType[];
     taskIds: mongoose.Types.ObjectId[];
     catchupTaskIds: mongoose.Types.ObjectId[];
     practiceLog: IPracticeLog[];
@@ -25,7 +25,7 @@ const DayPlanSchema = new Schema<IDayPlan>({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     scheduleId: { type: Schema.Types.ObjectId, ref: 'MonthlySchedule', required: true },
     date: { type: Date, required: true },
-    dayType: { type: String, enum: ['study', 'mock', 'revision', 'catchup'], required: true },
+    dayTypes: [{ type: String, enum: ['study', 'mock', 'revision', 'catchup'], required: true }],
     taskIds: [{ type: Schema.Types.ObjectId, ref: 'Task' }],
     catchupTaskIds: [{ type: Schema.Types.ObjectId, ref: 'Task' }],
     practiceLog: [PracticeLogSchema],

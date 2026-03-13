@@ -56,7 +56,7 @@ router.get('/:id/days', requireAuth, async (req: Request, res: Response) => {
             const date = new Date(schedule.year, schedule.month - 1, d);
             const dow = date.getDay();
             const cycleDay = schedule.cyclePattern.find((c) => c.dayOfWeek === dow);
-            days.push({ date: date.toISOString().split('T')[0], dayType: cycleDay?.type || 'study', subjects: cycleDay?.subjects || [] });
+            days.push({ date: date.toISOString().split('T')[0], dayTypes: cycleDay?.types || ['study'], subjects: cycleDay?.subjects || [] });
         }
         res.json(days);
     } catch (err) {
