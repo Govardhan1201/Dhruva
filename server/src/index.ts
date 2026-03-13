@@ -57,15 +57,11 @@ app.use('/api/analytics', analyticsRoutes);
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // --- Serve React client in production ---
-if (isProd) {
-    // __dirname equiv for ESM (ts-node runs as CJS so __dirname works; keep both)
-    const clientDist = path.resolve(__dirname, '../../client/dist');
-    app.use(express.static(clientDist));
-    // All non-API routes → index.html (SPA routing)
-    app.get(/.*/, (_req, res) => {
-        res.sendFile(path.join(clientDist, 'index.html'));
-    });
-}
+// Removed because frontend is hosted independently on Vercel
+// Fallback 404 for unhandled API routes
+app.use('*', (req, res) => {
+    res.status(404).json({ error: 'API route not found: ' + req.originalUrl });
+});
 
 // Error handler (must be last)
 app.use(errorHandler);
