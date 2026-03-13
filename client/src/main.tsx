@@ -9,12 +9,7 @@ const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ClerkProvider
-      publishableKey={PUBLISHABLE_KEY || 'pk_test_placeholder'}
-      // Vercel deployment fix for Clerk Dev instances:
-      routing="path"
-      path="/"
-    >
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY || 'pk_test_placeholder'}>
       <App />
       <Toaster
         position="top-right"
