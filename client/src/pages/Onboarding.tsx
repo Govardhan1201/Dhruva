@@ -75,8 +75,9 @@ export default function Onboarding() {
             setSchedule(schedRes.data)
             toast.success('Welcome to Dhruva! 🎉', { style: { background: '#111', color: '#f59e0b', border: '1px solid #222' } })
             nav('/dashboard')
-        } catch {
-            toast.error('Could not save. Please check your connection.')
+        } catch (e: any) {
+            const msg = e.response?.data?.error || 'Could not save. Please check your connection.';
+            toast.error(msg)
         } finally {
             setLoading(false)
         }

@@ -26,8 +26,9 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         // Link schedule to user
         await User.findByIdAndUpdate(user._id, { scheduleId: schedule._id });
         res.status(201).json(schedule);
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to create schedule' });
+    } catch (err: any) {
+        console.error("DEBUG SCHEDULE SAVE ERROR:", err);
+        res.status(500).json({ error: 'Failed to create schedule: ' + err.message });
     }
 });
 
