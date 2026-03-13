@@ -21,21 +21,26 @@ const PORT = process.env.PORT || 5000;
 const isProd = process.env.NODE_ENV === 'production';
 
 // --- CORS ---
-const allowedOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+// Allow requests from the configured CLIENT_ORIGIN (Vercel) and localhost for dev
+const allowedOrigins = [
+    process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    'http://localhost:5173',
+    'http://localhost:3000',
+];
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true); // curl / server-to-server
-        if (!isProd && origin.startsWith('http://localhost')) return callback(null, true);
-        if (origin === allowedOrigin) return callback(null, true);
-        // Allow any subdomain of same root domain in prod
-        try {
-            const allowed = new URL(allowedOrigin).hostname;
-            const req = new URL(origin).hostname;
-            if (req === allowed || req.endsWith('.' + allowed)) return callback(null, true);
-        } catch { }
-        callback(new Error('CORS not allowed for: ' + origin));
+        // Allow requests with no origin (curl, Render health checks, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        // Allow any vercel.app subdomain
+        if (origin.endsWith('.vercel.app')) return callback(null, true);
+        // Don't throw - just deny cleanly so OPTIONS doesn't return 500
+        return callback(null, false);
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200,
 }));
 
 // --- Middleware ---
