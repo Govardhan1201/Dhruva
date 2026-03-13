@@ -35,7 +35,7 @@ export default function Onboarding() {
     const [cyclePattern, setCyclePattern] = useState(
         DAYS.map((_, i) => ({
             dayOfWeek: i,
-            type: i === 0 ? 'catchup' : i === 6 ? 'revision' : 'study',
+            types: i === 0 ? ['catchup'] : i === 6 ? ['revision'] : ['study'],
             subjects: [],
             dailyStudyHours: 3,
         }))
@@ -255,16 +255,22 @@ export default function Onboarding() {
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                         {DAYS.map((day, i) => {
-                                            const currentType = cyclePattern[i].type
+                                            const currentTypes = cyclePattern[i].types as string[]
                                             return (
                                                 <div key={day} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                                     <div style={{ width: 40, fontSize: 12, fontWeight: 900, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{day}</div>
                                                     <div style={{ flex: 1, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                                         {DAY_TYPES.map(type => {
-                                                            const isSel = currentType === type
+                                                            const isSel = currentTypes.includes(type)
                                                             return (
                                                                 <button key={type}
-                                                                    onClick={() => setCyclePattern(p => p.map((d, di) => di === i ? { ...d, type } : d))}
+                                                                    onClick={() => setCyclePattern(p => p.map((d, di) => {
+                                                                        if (di !== i) return d;
+                                                                        const newTypes = isSel
+                                                                            ? d.types.filter(t => t !== type)
+                                                                            : [...d.types, type];
+                                                                        return { ...d, types: newTypes.length ? newTypes : ['study'] }
+                                                                    }))}
                                                                     style={{
                                                                         padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', border: '1px solid', cursor: 'pointer', transition: 'all 0.15s',
                                                                         background: isSel ? TYPE_STYLE[type].bg : 'rgba(255,255,255,0.02)',

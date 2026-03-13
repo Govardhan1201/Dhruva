@@ -103,63 +103,65 @@ export default function CalendarView() {
                         const jsDow = date.getDay()
                         const dayConfig = cyclePattern.find((c: any) => c.dayOfWeek === jsDow)
 
-                        let dayStyle = { bg: 'transparent', border: 'transparent', text: '#52525b', icon: null as any }
-                        if (inMonth && dayConfig?.type) {
-                            dayStyle = TYPE_STYLES[dayConfig.type] || dayStyle
-                        }
-
-                        const Icon = dayStyle.icon
-
                         return (
-                            <div key={date.toISOString()} style={{
-                                minHeight: 120,
-                                padding: '12px',
-                                borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid rgba(255,255,255,0.04)',
-                                borderBottom: i >= dates.length - 7 ? 'none' : '1px solid rgba(255,255,255,0.04)',
-                                background: inMonth ? (today ? 'rgba(245,158,11,0.03)' : 'transparent') : 'rgba(0,0,0,0.2)',
-                                opacity: inMonth ? 1 : 0.4,
-                                position: 'relative'
-                            }}>
-                                {/* Date Number */}
-                                <div style={{
-                                    width: 28, height: 28, borderRadius: 8,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    background: today ? '#f59e0b' : 'transparent',
-                                    color: today ? '#000' : (inMonth ? '#e4e4e7' : '#52525b'),
-                                    fontWeight: today ? 800 : 600,
-                                    fontSize: 13,
-                                    marginBottom: 12
-                                }}>
+                            <div
+                                key={date.toISOString()}
+                                style={{
+                                    padding: 12,
+                                    height: 120,
+                                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                                    borderRight: i % 7 !== 6 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                                    background: inMonth ? '#111113' : '#0a0a0a',
+                                    position: 'relative',
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        color: today ? '#f59e0b' : (inMonth ? '#d4d4d8' : '#52525b'),
+                                        position: 'absolute',
+                                        top: 8,
+                                        right: 8,
+                                    }}
+                                >
                                     {format(date, 'd')}
-                                </div>
+                                </span>
 
-                                {/* Content assigned to this day pattern */}
-                                {inMonth && dayConfig && (
-                                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                                        style={{
-                                            background: dayStyle.bg, border: `1px solid ${dayStyle.border}`,
-                                            borderRadius: 8, padding: '8px 10px',
-                                        }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                                            {Icon && <Icon size={12} color={dayStyle.text} />}
-                                            <span style={{ fontSize: 10, fontWeight: 800, color: dayStyle.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                {dayConfig.type}
-                                            </span>
-                                        </div>
-                                        {dayConfig.subjects && dayConfig.subjects.length > 0 ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                {dayConfig.subjects.map((sub: string, idx: number) => (
-                                                    <div key={idx} style={{ fontSize: 11, color: '#d4d4d8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        • {sub}
+                                {inMonth && dayConfig && dayConfig.types && dayConfig.types.length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 24 }}>
+                                        {dayConfig.types.map((type: string) => {
+                                            const dayStyle = TYPE_STYLES[type] || { bg: 'transparent', border: 'transparent', text: '#52525b', icon: null as any }
+                                            const Icon = dayStyle.icon
+                                            return (
+                                                <motion.div key={type} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                                                    style={{
+                                                        background: dayStyle.bg, border: `1px solid ${dayStyle.border}`,
+                                                        borderRadius: 8, padding: '8px 10px',
+                                                    }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                                        {Icon && <Icon size={12} color={dayStyle.text} />}
+                                                        <span style={{ fontSize: 10, fontWeight: 800, color: dayStyle.text, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            {type}
+                                                        </span>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
-                                                Free Day / General
-                                            </div>
-                                        )}
-                                    </motion.div>
+                                                    {dayConfig.subjects && dayConfig.subjects.length > 0 ? (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                            {dayConfig.subjects.map((sub: string, idx: number) => (
+                                                                <div key={idx} style={{ fontSize: 11, color: '#d4d4d8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    • {sub}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
+                                                            Free Day / General
+                                                        </div>
+                                                    )}
+                                                </motion.div>
+                                            )
+                                        })}
+                                    </div>
                                 )}
                             </div>
                         )
@@ -172,6 +174,6 @@ export default function CalendarView() {
                 100% { transform: rotate(360deg); }
             }
             `}</style>
-        </div>
+        </div >
     )
 }

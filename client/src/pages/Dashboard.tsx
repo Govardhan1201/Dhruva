@@ -185,15 +185,19 @@ export default function Dashboard() {
                             : 'Your study day'}
                     </p>
                 </div>
-                {dayPlan?.dayType && (
-                    <div style={{
-                        padding: '6px 14px', borderRadius: 20, fontSize: 11, fontWeight: 800,
-                        textTransform: 'uppercase', letterSpacing: '0.08em',
-                        background: dayPlan.dayType === 'catchup' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
-                        color: dayPlan.dayType === 'catchup' ? '#10b981' : '#f59e0b',
-                        border: `1px solid ${dayPlan.dayType === 'catchup' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}`,
-                    }}>
-                        {dayPlan.dayType} Day
+                {dayPlan?.dayTypes?.length > 0 && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        {dayPlan.dayTypes.map((dt: string) => (
+                            <div key={dt} style={{
+                                padding: '6px 14px', borderRadius: 20, fontSize: 11, fontWeight: 800,
+                                textTransform: 'uppercase', letterSpacing: '0.08em',
+                                background: dt === 'catchup' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
+                                color: dt === 'catchup' ? '#10b981' : '#f59e0b',
+                                border: `1px solid ${dt === 'catchup' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}`,
+                            }}>
+                                {dt} Day
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
@@ -246,7 +250,7 @@ export default function Dashboard() {
             </div>
 
             {/* ── Pending banner ── */}
-            {pending > 0 && dayPlan?.dayType !== 'catchup' && (
+            {pending > 0 && !dayPlan?.dayTypes?.includes('catchup') && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                     style={{ ...CARD, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.15)' }}>
                     <AlertTriangle size={15} color="#f87171" style={{ flexShrink: 0 }} />
@@ -258,7 +262,7 @@ export default function Dashboard() {
             )}
 
             {/* ── Daily Target Warning ── */}
-            {neededMins > 0 && dayPlan?.dayType !== 'catchup' && (
+            {neededMins > 0 && !dayPlan?.dayTypes?.includes('catchup') && (
                 <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
                     style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', padding: '14px 20px', borderRadius: 12, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                     <AlertTriangle size={18} color="#ef4444" style={{ marginTop: 2, flexShrink: 0 }} />
