@@ -62,7 +62,7 @@ if (isProd) {
     const clientDist = path.resolve(__dirname, '../../client/dist');
     app.use(express.static(clientDist));
     // All non-API routes → index.html (SPA routing)
-    app.get('*', (_req, res) => {
+    app.get(/.*/, (_req, res) => {
         res.sendFile(path.join(clientDist, 'index.html'));
     });
 }
