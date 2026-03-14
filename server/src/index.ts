@@ -64,7 +64,7 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Da
 // --- Serve React client in production ---
 // Removed because frontend is hosted independently on Vercel
 // Fallback 404 for unhandled API routes
-app.use('*', (req, res) => {
+app.use((req, res) => {
     res.status(404).json({ error: 'API route not found: ' + req.originalUrl });
 });
 
