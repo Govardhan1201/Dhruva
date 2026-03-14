@@ -9,6 +9,7 @@ interface UserProfile {
     examId?: { _id: string; name: string; slug: string; category: string };
     scheduleId?: string;
     groupIds: string[];
+    createdAt?: string;
 }
 
 interface Schedule {
@@ -16,6 +17,7 @@ interface Schedule {
     month: number;
     year: number;
     cyclePattern: any[];
+    repeatWeekly: boolean;
     examId: { name: string; slug: string };
     inviteCode: string;
 }

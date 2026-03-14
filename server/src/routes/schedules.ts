@@ -65,4 +65,34 @@ router.get('/:id/days', requireAuth, async (req: Request, res: Response) => {
     }
 });
 
+// PATCH /api/schedules/me — update active schedule (timetable / exam)
+router.patch('/me', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const clerkId = (req as any).userId;
+        const user = await User.findOne({ clerkId });
+        if (!user?.scheduleId) { res.status(404).json({ error: 'No active schedule to update' }); return; }
+
+        const { cyclePattern, repeatWeekly, examId } = req.body;
+        const update: any = {};
+        if (cyclePattern !== undefined) update.cyclePattern = cyclePattern;
+        if (repeatWeekly !== undefined) update.repeatWeekly = repeatWeekly;
+        if (examId !== undefined) update.examId = examId;
+
+        const schedule = await MonthlySchedule.findByIdAndUpdate(
+            user.scheduleId,
+            update,
+            { new: true }
+        );
+
+        // Also update examId on the user if provided
+        if (examId !== undefined) {
+            await User.findByIdAndUpdate(user._id, { examId });
+        }
+
+        res.json(schedule);
+    } catch (err: any) {
+        res.status(500).json({ error: 'Failed to update schedule: ' + err.message });
+    }
+});
+
 export default router;

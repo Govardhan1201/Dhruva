@@ -1,0 +1,1 @@
+fetch('http://localhost:5000/api/schedules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ examId: '65f1a2b3c4d5e6f7a8b9c0d1', month: 3, year: 2026, repeatWeekly: true, cyclePattern: [{ dayOfWeek: 0, types: ['study'], subjects: ['Maths'], dailyStudyHours: 3 }] }) }).then(r => r.json()).then(console.log)

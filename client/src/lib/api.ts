@@ -31,11 +31,13 @@ export const authApi = {
 export const scheduleApi = {
     create: (data: any) => api.post('/schedules', data),
     me: () => api.get('/schedules/me'),
+    update: (data: any) => api.patch('/schedules/me', data),
     days: (id: string) => api.get(`/schedules/${id}/days`),
 };
 
 export const dayplanApi = {
     get: (date: string) => api.get(`/dayplans/${date}`),
+    range: (start: string, end: string) => api.get('/dayplans/range', { params: { start, end } }),
     updateLog: (id: string, data: any) => api.patch(`/dayplans/${id}/log`, data),
     generateCatchup: (id: string) => api.post(`/dayplans/${id}/generate-catchup`, {}),
 };

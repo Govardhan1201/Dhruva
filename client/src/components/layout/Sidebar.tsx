@@ -1,7 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, ClipboardCheck, BarChart3, Users, LogOut, Calendar } from 'lucide-react'
+import { LayoutDashboard, BookOpen, ClipboardCheck, BarChart3, Users, LogOut, Calendar, Settings } from 'lucide-react'
 import { useAppStore } from '../../store/appStore'
 import { useClerk } from '@clerk/react'
+import { useState } from 'react'
+import SettingsModal from './SettingsModal'
 
 const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -16,6 +18,7 @@ export default function Sidebar() {
     const { user } = useAppStore()
     const { signOut } = useClerk()
     const navigate = useNavigate()
+    const [showSettings, setShowSettings] = useState(false)
 
     return (
         <div style={{
@@ -82,6 +85,26 @@ export default function Sidebar() {
 
             <div style={{ height: 1, margin: '8px 12px', background: 'rgba(255,255,255,0.04)' }} />
 
+            {/* Settings button */}
+            <div style={{ padding: '4px 8px' }}>
+                <button onClick={() => setShowSettings(true)}
+                    style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 12px', borderRadius: 10, border: '1px solid transparent',
+                        background: 'transparent', cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.05)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.03)', flexShrink: 0 }}>
+                        <Settings size={15} color="#52525b" />
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#71717a' }}>Settings</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, color: '#52525b', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 6, padding: '2px 7px', letterSpacing: '0.06em' }}>EXAM + PLAN</span>
+                </button>
+            </div>
+
+            <div style={{ height: 1, margin: '4px 12px 0', background: 'rgba(255,255,255,0.04)' }} />
+
             {/* User */}
             {user && (
                 <div style={{ padding: '12px 12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -103,6 +126,8 @@ export default function Sidebar() {
                     </button>
                 </div>
             )}
+
+            <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
         </div>
     )
 }

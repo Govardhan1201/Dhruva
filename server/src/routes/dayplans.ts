@@ -4,11 +4,99 @@ import DayPlan from '../models/DayPlan';
 import Task from '../models/Task';
 import User from '../models/User';
 import MonthlySchedule from '../models/MonthlySchedule';
-import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { subDays, startOfDay, endOfDay, eachDayOfInterval, parseISO, isBefore } from 'date-fns';
 
 const router = Router();
 
-// GET /api/dayplans/:date
+// GET /api/dayplans/range?start=YYYY-MM-DD&end=YYYY-MM-DD
+// Returns { date, dayTypes, completionStatus } for each calendar day
+router.get('/range', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const clerkId = (req as any).userId;
+        const user = await User.findOne({ clerkId });
+        if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+
+        const startStr = req.query.start as string;
+        const endStr = req.query.end as string;
+        if (!startStr || !endStr) { res.status(400).json({ error: 'start and end query params required' }); return; }
+
+        const startDate = parseISO(startStr);
+        const endDate = parseISO(endStr);
+        const today = startOfDay(new Date());
+
+        const allDays = eachDayOfInterval({ start: startDate, end: endDate });
+
+        // Fetch all tasks in that range
+        const tasks = await Task.find({
+            userId: user._id,
+            scheduledDate: { $gte: startOfDay(startDate), $lte: endOfDay(endDate) },
+        });
+
+        // Group tasks by date string
+        const tasksByDate: Record<string, any[]> = {};
+        tasks.forEach((t: any) => {
+            const key = new Date(t.scheduledDate).toISOString().split('T')[0];
+            if (!tasksByDate[key]) tasksByDate[key] = [];
+            tasksByDate[key].push(t);
+        });
+
+        // Fetch DayPlans to get dayTypes
+        const dayPlans = await DayPlan.find({
+            userId: user._id,
+            date: { $gte: startOfDay(startDate), $lte: endOfDay(endDate) },
+        });
+        const dayPlanByDate: Record<string, any> = {};
+        dayPlans.forEach((dp: any) => {
+            const key = new Date(dp.date).toISOString().split('T')[0];
+            dayPlanByDate[key] = dp;
+        });
+
+        // Get schedule cycle pattern for dayTypes on days without a DayPlan
+        let cyclePattern: any[] = [];
+        if (user.scheduleId) {
+            const schedule = await MonthlySchedule.findById(user.scheduleId);
+            cyclePattern = schedule?.cyclePattern || [];
+        }
+
+        const result = allDays.map((day) => {
+            const key = day.toISOString().split('T')[0];
+            const isPast = isBefore(startOfDay(day), today);
+            const dayPlan = dayPlanByDate[key];
+            const dayTasks = tasksByDate[key] || [];
+
+            // Resolve dayTypes from DayPlan or cyclePattern
+            let dayTypes: string[] = ['study'];
+            if (dayPlan?.dayTypes?.length) {
+                dayTypes = dayPlan.dayTypes;
+            } else {
+                const dow = day.getDay();
+                const cyc = cyclePattern.find((c: any) => c.dayOfWeek === dow);
+                if (cyc?.types?.length) dayTypes = cyc.types;
+            }
+
+            // Compute completion status — only meaningful for past days
+            let completionStatus: 'full' | 'partial' | 'none' | 'future' = 'future';
+            if (isPast) {
+                if (dayTasks.length === 0) {
+                    completionStatus = 'none';
+                } else {
+                    const done = dayTasks.filter((t: any) => t.status === 'completed').length;
+                    const partial = dayTasks.filter((t: any) => t.status === 'partial').length;
+                    if (done === dayTasks.length) completionStatus = 'full';
+                    else if (done > 0 || partial > 0) completionStatus = 'partial';
+                    else completionStatus = 'none';
+                }
+            }
+
+            return { date: key, dayTypes, completionStatus };
+        });
+
+        res.json(result);
+    } catch (err: any) {
+        console.error('Range dayplans error:', err);
+        res.status(500).json({ error: 'Failed to fetch range' });
+    }
+});
 router.get('/:date', requireAuth, async (req: Request, res: Response) => {
     try {
         const clerkId = (req as any).userId;

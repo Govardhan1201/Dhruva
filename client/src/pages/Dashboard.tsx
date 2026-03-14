@@ -8,13 +8,8 @@ import {
     AlertTriangle, ChevronRight, X, Trash2, ArrowRightCircle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import TaskCompletionEffect from '../components/3d/TaskCompletionEffect'
 
-const STATUS_COLOR: Record<string, string> = {
-    completed: '#10b981', partial: '#f59e0b', pending: '#52525b',
-}
-const STATUS_ICON: Record<string, any> = {
-    completed: CheckCircle2, partial: MinusCircle, pending: Circle,
-}
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const CARD: React.CSSProperties = {
@@ -40,6 +35,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true)
     const [showAdd, setShowAdd] = useState(false)
     const [showPunishment, setShowPunishment] = useState(false)
+    const [completingTask, setCompletingTask] = useState<{ id: string; status: 'partial' | 'completed' } | null>(null)
     const [form, setForm] = useState({
         subject: '', chapter: '', description: '',
         durationMinutes: 30,
@@ -93,6 +89,9 @@ export default function Dashboard() {
         try {
             await taskApi.updateStatus(task._id, next)
             setTasks(p => p.map(t => t._id === task._id ? { ...t, status: next } : t))
+            if (next === 'partial' || next === 'completed') {
+                setCompletingTask({ id: task._id, status: next as 'partial' | 'completed' })
+            }
         } catch { toast.error('Could not update') }
     }
 
@@ -451,19 +450,48 @@ export default function Dashboard() {
 
                                 {/* Tasks */}
                                 {stasks.map((task: any, ti: number) => {
-                                    const Icon = STATUS_ICON[task.status]
                                     const isDone = task.status === 'completed'
+                                    const isPartial = task.status === 'partial'
+                                    const isPending = task.status === 'pending'
+                                    // Status pill config
+                                    const pillConfig = isPending
+                                        ? { label: 'Mark Done', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', color: '#34d399', icon: CheckCircle2 }
+                                        : isPartial
+                                            ? { label: 'Complete', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.35)', color: '#fbbf24', icon: CheckCircle2 }
+                                            : { label: 'Completed', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', color: '#10b981', icon: CheckCircle2 }
+                                    const PillIcon = isPending ? Circle : isPartial ? MinusCircle : CheckCircle2
                                     return (
                                         <div key={task._id} style={{
                                             display: 'flex', alignItems: 'center', gap: 14,
                                             padding: '14px 20px',
                                             borderBottom: ti < stasks.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
-                                            background: isDone ? 'rgba(16,185,129,0.05)' : 'rgba(239,68,68,0.08)',
-                                            borderLeft: isDone ? '3px solid #10b981' : '3px solid #ef4444',
+                                            background: isDone ? 'rgba(16,185,129,0.05)' : isPartial ? 'rgba(245,158,11,0.04)' : 'rgba(239,68,68,0.08)',
+                                            borderLeft: isDone ? '3px solid #10b981' : isPartial ? '3px solid #f59e0b' : '3px solid #ef4444',
+                                            position: 'relative',
                                         }}>
+                                            {/* 3D Completion Effect */}
+                                            {completingTask !== null && completingTask.id === task._id && (
+                                                <TaskCompletionEffect
+                                                    status={completingTask.status}
+                                                    onDone={() => setCompletingTask(null)}
+                                                />
+                                            )}
+                                            {/* Prominent status pill button */}
                                             <button onClick={() => cycleStatus(task)}
-                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
-                                                <Icon size={20} color={STATUS_COLOR[task.status]} />
+                                                title={`Status: ${task.status} — click to advance`}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: 5,
+                                                    padding: '6px 12px', borderRadius: 20, border: `1.5px solid ${pillConfig.border}`,
+                                                    background: pillConfig.bg, color: pillConfig.color,
+                                                    fontSize: 11, fontWeight: 800, cursor: 'pointer',
+                                                    letterSpacing: '0.04em', flexShrink: 0,
+                                                    transition: 'all 0.15s', whiteSpace: 'nowrap',
+                                                }}
+                                                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.2)'}
+                                                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.filter = 'none'}
+                                            >
+                                                <PillIcon size={13} />
+                                                {isPending ? 'Mark Done' : isPartial ? '◑ Partial — Complete' : '✓ Completed'}
                                             </button>
                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                 <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#52525b' : '#d4d4d8', margin: 0, textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
