@@ -62,11 +62,16 @@ export default function Onboarding() {
         if (!selectedExam) return
         setLoading(true)
         try {
-            await authApi.updateMe({ examId: selectedExam._id })
+            // Check if the examId is a valid 24-char MongoDB ObjectId. If it's a fallback string like 'ca-foundation', omit it.
+            const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(selectedExam._id);
+            const payloadExamId = isValidObjectId ? selectedExam._id : undefined;
+
+            await authApi.updateMe({ examId: payloadExamId })
             const meRes = await authApi.me()
             setUser(meRes.data)
+            
             const schedRes = await scheduleApi.create({
-                examId: selectedExam._id,
+                examId: payloadExamId,
                 month: new Date().getMonth() + 1,
                 year: new Date().getFullYear(),
                 cyclePattern,
