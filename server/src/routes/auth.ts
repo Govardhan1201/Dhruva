@@ -62,7 +62,8 @@ router.patch('/me', requireAuth, async (req: Request, res: Response) => {
         const user = await User.findOneAndUpdate({ clerkId }, { examId, name }, { new: true }).populate('examId', 'name slug category');
         res.json(user);
     } catch (err) {
-        res.status(500).json({ error: 'Failed to update user' });
+        console.error('Failed to update user in /auth/me:', err);
+        res.status(500).json({ error: 'Failed to update user', details: err instanceof Error ? err.message : 'Unknown' });
     }
 });
 
