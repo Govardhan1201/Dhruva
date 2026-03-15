@@ -58,8 +58,20 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
 router.patch('/me', requireAuth, async (req: Request, res: Response) => {
     try {
         const clerkId = (req as any).userId;
-        const { examId, name } = req.body;
-        const user = await User.findOneAndUpdate({ clerkId }, { examId, name }, { new: true }).populate('examId', 'name slug category');
+        const { examId, examName, name } = req.body;
+
+        // Build update object — only include defined fields
+        const update: any = {};
+        if (name !== undefined) update.name = name;
+        if (examName !== undefined) update.examName = examName;
+        // Only update examId if it's a valid value (avoid CastErrors from fallback string IDs)
+        if (examId !== undefined && examId !== null) update.examId = examId;
+
+        const user = await User.findOneAndUpdate(
+            { clerkId },
+            update,
+            { new: true }
+        ).populate('examId', 'name slug category');
         res.json(user);
     } catch (err) {
         console.error('Failed to update user in /auth/me:', err);

@@ -179,8 +179,8 @@ export default function Dashboard() {
                         {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </h1>
                     <p style={{ fontSize: 13, color: '#52525b', margin: '5px 0 0' }}>
-                        {(user?.examId as any)?.name
-                            ? `Preparing for ${(user?.examId as any).name}`
+                        {(user?.examId as any)?.name || (user as any)?.examName
+                            ? `Preparing for ${(user?.examId as any)?.name || (user as any)?.examName}`
                             : 'Your study day'}
                     </p>
                 </div>

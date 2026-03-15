@@ -63,7 +63,7 @@ function AppRoutes() {
       {/* Catch-all: if signed in, route to right place */}
       <Route path="*" element={
         isSignedIn
-          ? <Navigate to={user?.examId && user?.scheduleId ? '/dashboard' : '/onboarding'} replace />
+          ? <Navigate to={user?.scheduleId ? '/dashboard' : '/onboarding'} replace />
           : <Navigate to="/" replace />
       } />
     </Routes>

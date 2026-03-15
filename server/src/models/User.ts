@@ -6,6 +6,7 @@ export interface IUser extends Document {
     email: string;
     avatar?: string;
     examId?: mongoose.Types.ObjectId;
+    examName?: string;     // display name, always saved even for fallback exams
     scheduleId?: mongoose.Types.ObjectId;
     groupIds: mongoose.Types.ObjectId[];
     friends: mongoose.Types.ObjectId[];
@@ -20,6 +21,7 @@ const UserSchema = new Schema<IUser>({
     email: { type: String, required: true, unique: true },
     avatar: String,
     examId: { type: Schema.Types.ObjectId, ref: 'ExamConfig' },
+    examName: { type: String },
     scheduleId: { type: Schema.Types.ObjectId, ref: 'MonthlySchedule' },
     groupIds: [{ type: Schema.Types.ObjectId, ref: 'Group' }],
     friends: [{ type: Schema.Types.ObjectId, ref: 'User' }],

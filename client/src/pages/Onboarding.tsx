@@ -66,7 +66,8 @@ export default function Onboarding() {
             const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(selectedExam._id);
             const payloadExamId = isValidObjectId ? selectedExam._id : undefined;
 
-            await authApi.updateMe({ examId: payloadExamId })
+            // Always save the exam name so it displays correctly after re-login
+            await authApi.updateMe({ examId: payloadExamId, examName: selectedExam.name })
             const meRes = await authApi.me()
             setUser(meRes.data)
             
