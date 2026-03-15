@@ -61,11 +61,20 @@ router.patch('/me', requireAuth, async (req: Request, res: Response) => {
         const { examId, examName, name } = req.body;
 
         // Build update object — only include defined fields
-        const update: any = {};
-        if (name !== undefined) update.name = name;
-        if (examName !== undefined) update.examName = examName;
-        // Only update examId if it's a valid value (avoid CastErrors from fallback string IDs)
-        if (examId !== undefined && examId !== null) update.examId = examId;
+        const update: any = { $set: {}, $unset: {} };
+        if (name !== undefined) update.$set.name = name;
+        if (examName !== undefined) update.$set.examName = examName;
+        
+        // If examId is explicitly null, the user switched to a fallback exam. We must $unset it.
+        if (examId === null) {
+            update.$unset.examId = 1;
+        } else if (examId !== undefined) {
+            update.$set.examId = examId;
+        }
+
+        // Clean up empty objects so MongoDB doesn't throw
+        if (Object.keys(update.$set).length === 0) delete update.$set;
+        if (Object.keys(update.$unset).length === 0) delete update.$unset;
 
         const user = await User.findOneAndUpdate(
             { clerkId },

@@ -79,7 +79,7 @@ export default function SettingsModal({ open, onClose }: Props) {
         setLoading(true)
         try {
             const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(selectedExam._id)
-            const examId = isValidObjectId ? selectedExam._id : undefined
+            const examId = isValidObjectId ? selectedExam._id : null
             await authApi.updateMe({ examId, examName: selectedExam.name })
             const meRes = await authApi.me()
             setUser(meRes.data)

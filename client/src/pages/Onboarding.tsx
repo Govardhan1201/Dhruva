@@ -62,9 +62,9 @@ export default function Onboarding() {
         if (!selectedExam) return
         setLoading(true)
         try {
-            // Check if the examId is a valid 24-char MongoDB ObjectId. If it's a fallback string like 'ca-foundation', omit it.
+            // Check if the examId is a valid 24-char MongoDB ObjectId. If it's a fallback string like 'ca-foundation', send null to unset it.
             const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(selectedExam._id);
-            const payloadExamId = isValidObjectId ? selectedExam._id : undefined;
+            const payloadExamId = isValidObjectId ? selectedExam._id : null;
 
             // Always save the exam name so it displays correctly after re-login
             await authApi.updateMe({ examId: payloadExamId, examName: selectedExam.name })

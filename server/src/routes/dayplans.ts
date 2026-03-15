@@ -129,6 +129,36 @@ router.get('/:date', requireAuth, async (req: Request, res: Response) => {
                     targetStudyHours: (cycleDay as any)?.dailyStudyHours || 3,
                 });
             }
+        } else if (dayPlan && user.scheduleId) {
+            // DayPlan exists. If the date is TODAY or IN THE FUTURE, we must check if 
+            // the schedule settings (dayTypes or targetStudyHours) were recently changed in Settings 
+            // and update the DayPlan so the Dashboard stays in sync instantly.
+            const today = startOfDay(new Date());
+            const planDate = startOfDay(dayPlan.date);
+            
+            if (!isBefore(planDate, today)) {
+                const schedule = await MonthlySchedule.findById(user.scheduleId);
+                if (schedule) {
+                    const pattern = resolvePatternForDate(date, schedule);
+                    const dow = date.getDay();
+                    const cycleDay = pattern.find((c: any) => c.dayOfWeek === dow);
+
+                    const resolvedTypes = cycleDay?.types || ['study'];
+                    const resolvedHours = (cycleDay as any)?.dailyStudyHours || 3;
+
+                    // If the DayPlan out of sync with current timetable settings, update it
+                    const typesChanged = JSON.stringify(dayPlan.dayTypes) !== JSON.stringify(resolvedTypes);
+                    const hoursChanged = dayPlan.targetStudyHours !== resolvedHours;
+
+                    if (typesChanged || hoursChanged) {
+                        dayPlan = await DayPlan.findByIdAndUpdate(
+                            dayPlan._id,
+                            { dayTypes: resolvedTypes, targetStudyHours: resolvedHours },
+                            { new: true }
+                        ).populate('taskIds').populate('catchupTaskIds');
+                    }
+                }
+            }
         }
 
         // Fallback synthetic plan if no schedule yet (new users)
