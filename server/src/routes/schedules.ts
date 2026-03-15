@@ -96,16 +96,13 @@ router.patch('/me', requireAuth, async (req: Request, res: Response) => {
         if (examName !== undefined) update.examName = examName;
 
         if (cyclePattern !== undefined) {
-            // Save old pattern to history before overwriting
-            const current = await MonthlySchedule.findById(user.scheduleId);
-            if (current) {
-                update.$push = {
-                    patternHistory: {
-                        changedAt: new Date(),
-                        cyclePattern: current.cyclePattern,
-                    },
-                };
-            }
+            // Push the NEW pattern to history so it applies from this exact moment onwards
+            update.$push = {
+                patternHistory: {
+                    changedAt: new Date(),
+                    cyclePattern: cyclePattern,
+                },
+            };
             update.cyclePattern = cyclePattern;
         }
 

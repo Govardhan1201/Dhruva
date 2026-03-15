@@ -25,6 +25,7 @@ function AppRoutes() {
   const { isSignedIn, isLoaded } = useAuth()
   const { setUser, user } = useAppStore()
   const [fetchingUser, setFetchingUser] = useState(false)
+  const [fetchFailed, setFetchFailed] = useState(false)
 
   useEffect(() => {
     if (isSignedIn && !user && !fetchingUser) {
@@ -36,15 +37,16 @@ function AppRoutes() {
         })
         .catch(() => {
           setFetchingUser(false)
+          setFetchFailed(true)
         })
     }
-  }, [isSignedIn])
+  }, [isSignedIn, user, fetchingUser, setUser])
 
   // Still loading Clerk auth state
   if (!isLoaded) return <SmoothLoader />
 
-  // Signed in but still fetching user from DB
-  if (isSignedIn && !user && fetchingUser) return <SmoothLoader />
+  // Signed in but still fetching user from DB (or waiting to fetch)
+  if (isSignedIn && !user && !fetchFailed) return <SmoothLoader />
 
   return (
     <Routes>
