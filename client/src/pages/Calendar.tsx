@@ -83,7 +83,7 @@ export default function CalendarView() {
         )
     }
 
-    const cyclePattern = schedule.cyclePattern || []
+
 
     return (
         <div>
