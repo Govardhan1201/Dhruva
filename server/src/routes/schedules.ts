@@ -13,13 +13,27 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         const user = await User.findOne({ clerkId });
         if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
-        const { examId, month, year, cyclePattern, repeatWeekly } = req.body;
+        const { examId, examName, month, year, cyclePattern, repeatWeekly } = req.body;
         const inviteCode = nanoid(8);
+
+        // Build the update object — only include examId if it was provided and valid
+        const scheduleData: any = {
+            userId: user._id,
+            month,
+            year,
+            cyclePattern,
+            repeatWeekly,
+            inviteCode,
+            // Start with an empty patternHistory — this is the very first pattern
+            patternHistory: [{ changedAt: new Date(), cyclePattern }],
+        };
+        if (examId) scheduleData.examId = examId;
+        if (examName) scheduleData.examName = examName;
 
         // Upsert schedule for this month/year
         const schedule = await MonthlySchedule.findOneAndUpdate(
             { userId: user._id, month, year },
-            { userId: user._id, examId, month, year, cyclePattern, repeatWeekly, inviteCode },
+            scheduleData,
             { upsert: true, new: true }
         );
 
@@ -56,7 +70,10 @@ router.get('/:id/days', requireAuth, async (req: Request, res: Response) => {
         for (let d = 1; d <= daysInMonth; d++) {
             const date = new Date(schedule.year, schedule.month - 1, d);
             const dow = date.getDay();
-            const cycleDay = schedule.cyclePattern.find((c) => c.dayOfWeek === dow);
+
+            // Use patternHistory to resolve which cyclePattern was active on this date
+            const pattern = resolvePatternForDate(date, schedule);
+            const cycleDay = pattern.find((c) => c.dayOfWeek === dow);
             days.push({ date: date.toISOString().split('T')[0], dayTypes: cycleDay?.types || ['study'], subjects: cycleDay?.subjects || [] });
         }
         res.json(days);
@@ -72,11 +89,25 @@ router.patch('/me', requireAuth, async (req: Request, res: Response) => {
         const user = await User.findOne({ clerkId });
         if (!user?.scheduleId) { res.status(404).json({ error: 'No active schedule to update' }); return; }
 
-        const { cyclePattern, repeatWeekly, examId } = req.body;
+        const { cyclePattern, repeatWeekly, examId, examName } = req.body;
         const update: any = {};
-        if (cyclePattern !== undefined) update.cyclePattern = cyclePattern;
         if (repeatWeekly !== undefined) update.repeatWeekly = repeatWeekly;
         if (examId !== undefined) update.examId = examId;
+        if (examName !== undefined) update.examName = examName;
+
+        if (cyclePattern !== undefined) {
+            // Save old pattern to history before overwriting
+            const current = await MonthlySchedule.findById(user.scheduleId);
+            if (current) {
+                update.$push = {
+                    patternHistory: {
+                        changedAt: new Date(),
+                        cyclePattern: current.cyclePattern,
+                    },
+                };
+            }
+            update.cyclePattern = cyclePattern;
+        }
 
         const schedule = await MonthlySchedule.findByIdAndUpdate(
             user.scheduleId,
@@ -84,9 +115,12 @@ router.patch('/me', requireAuth, async (req: Request, res: Response) => {
             { new: true }
         );
 
-        // Also update examId on the user if provided
-        if (examId !== undefined) {
-            await User.findByIdAndUpdate(user._id, { examId });
+        // Also update examId/examName on the user if provided
+        const userUpdate: any = {};
+        if (examId !== undefined) userUpdate.examId = examId;
+        if (examName !== undefined) userUpdate.examName = examName;
+        if (Object.keys(userUpdate).length > 0) {
+            await User.findByIdAndUpdate(user._id, userUpdate);
         }
 
         res.json(schedule);
@@ -95,4 +129,58 @@ router.patch('/me', requireAuth, async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * Given a date and a schedule document, return the cyclePattern that was active
+ * on that date, using patternHistory.
+ *
+ * patternHistory is sorted [oldest, ..., newest]. Each entry's `changedAt` is the
+ * date when THAT pattern became active (i.e. the previous entry was active before that).
+ *
+ * The current `schedule.cyclePattern` is the one active from the LAST history entry onwards.
+ *
+ * Logic: find the LAST patternHistory entry whose `changedAt` <= the given date.
+ * That entry's cyclePattern was the active one on that date.
+ * If no history entry applies, fall back to schedule.cyclePattern.
+ */
+function resolvePatternForDate(date: Date, schedule: any): any[] {
+    const history: { changedAt: Date; cyclePattern: any[] }[] = schedule.patternHistory || [];
+
+    // Sort by changedAt ascending (oldest first)
+    const sorted = [...history].sort((a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime());
+
+    let activePattern = schedule.cyclePattern; // default to current
+
+    // The last entry in patternHistory was the pattern BEFORE the current one changed.
+    // So we walk backward from newest to find the snapshot that was active ON this date.
+    // A snapshot at index i was the active pattern from sorted[i].changedAt to sorted[i+1].changedAt.
+    // The current pattern is active from sorted[last].changedAt onwards.
+    //
+    // So: if date < sorted[0].changedAt → use sorted[0].cyclePattern (initial snapshot)
+    //     if sorted[i].changedAt <= date < sorted[i+1].changedAt → use sorted[i+1].cyclePattern
+    //     if date >= sorted[last].changedAt → use schedule.cyclePattern (current)
+
+    if (sorted.length === 0) return schedule.cyclePattern;
+
+    const dateMs = date.getTime();
+
+    // If date is before the very first snapshot's changedAt, use that first snapshot
+    if (dateMs < new Date(sorted[0].changedAt).getTime()) {
+        return sorted[0].cyclePattern;
+    }
+
+    // Walk forward — the current pattern applies from the LAST snapshot's changedAt
+    for (let i = 0; i < sorted.length - 1; i++) {
+        const from = new Date(sorted[i].changedAt).getTime();
+        const to = new Date(sorted[i + 1].changedAt).getTime();
+        if (dateMs >= from && dateMs < to) {
+            // This date falls in the window where sorted[i+1] was the new pattern
+            return sorted[i + 1].cyclePattern;
+        }
+    }
+
+    // Date is >= last snapshot changedAt — use current pattern
+    return activePattern;
+}
+
+export { resolvePatternForDate };
 export default router;

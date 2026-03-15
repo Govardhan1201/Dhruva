@@ -4,6 +4,7 @@ import DayPlan from '../models/DayPlan';
 import Task from '../models/Task';
 import User from '../models/User';
 import MonthlySchedule from '../models/MonthlySchedule';
+import { resolvePatternForDate } from './schedules';
 import { subDays, startOfDay, endOfDay, eachDayOfInterval, parseISO, isBefore } from 'date-fns';
 
 const router = Router();
@@ -51,11 +52,10 @@ router.get('/range', requireAuth, async (req: Request, res: Response) => {
             dayPlanByDate[key] = dp;
         });
 
-        // Get schedule cycle pattern for dayTypes on days without a DayPlan
-        let cyclePattern: any[] = [];
+        // Load full schedule (including patternHistory) once
+        let schedule: any = null;
         if (user.scheduleId) {
-            const schedule = await MonthlySchedule.findById(user.scheduleId);
-            cyclePattern = schedule?.cyclePattern || [];
+            schedule = await MonthlySchedule.findById(user.scheduleId);
         }
 
         const result = allDays.map((day) => {
@@ -64,13 +64,14 @@ router.get('/range', requireAuth, async (req: Request, res: Response) => {
             const dayPlan = dayPlanByDate[key];
             const dayTasks = tasksByDate[key] || [];
 
-            // Resolve dayTypes from DayPlan or cyclePattern
+            // Resolve dayTypes from DayPlan or schedule patternHistory
             let dayTypes: string[] = ['study'];
             if (dayPlan?.dayTypes?.length) {
                 dayTypes = dayPlan.dayTypes;
-            } else {
+            } else if (schedule) {
+                const pattern = resolvePatternForDate(day, schedule);
                 const dow = day.getDay();
-                const cyc = cyclePattern.find((c: any) => c.dayOfWeek === dow);
+                const cyc = pattern.find((c: any) => c.dayOfWeek === dow);
                 if (cyc?.types?.length) dayTypes = cyc.types;
             }
 
@@ -97,6 +98,7 @@ router.get('/range', requireAuth, async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch range' });
     }
 });
+
 router.get('/:date', requireAuth, async (req: Request, res: Response) => {
     try {
         const clerkId = (req as any).userId;
@@ -112,8 +114,10 @@ router.get('/:date', requireAuth, async (req: Request, res: Response) => {
         if (!dayPlan && user.scheduleId) {
             const schedule = await MonthlySchedule.findById(user.scheduleId);
             if (schedule) {
+                // Use historically-correct pattern for this specific date
+                const pattern = resolvePatternForDate(date, schedule);
                 const dow = date.getDay();
-                const cycleDay = schedule.cyclePattern.find((c) => c.dayOfWeek === dow);
+                const cycleDay = pattern.find((c: any) => c.dayOfWeek === dow);
                 dayPlan = await DayPlan.create({
                     userId: user._id,
                     scheduleId: user.scheduleId,

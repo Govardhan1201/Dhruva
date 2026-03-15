@@ -42,9 +42,9 @@ export default function Dashboard() {
         isRecurring: false,
         recurringDays: [] as number[],
     })
-    const { user } = useAppStore()
+    const { user, scheduleVersion } = useAppStore()
 
-    useEffect(() => { loadDay() }, [])
+    useEffect(() => { loadDay() }, [scheduleVersion])
 
     const loadDay = async () => {
         setLoading(true)

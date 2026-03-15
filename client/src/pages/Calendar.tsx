@@ -152,16 +152,9 @@ export default function CalendarView() {
                         // Is this a future day (no completion dot)?
                         const isFuture = !isBefore(dayStart, todayStart)
 
-                        // Day type info from range API or fall back to cyclePattern
+                        // Day type info from range API (which correctly resolves patternHistory)
                         const rangeDay = rangeData[dateKey]
-                        let dayTypes: string[] = []
-                        if (rangeDay?.dayTypes?.length) {
-                            dayTypes = rangeDay.dayTypes
-                        } else {
-                            const dow = date.getDay()
-                            const cyc = cyclePattern.find((c: any) => c.dayOfWeek === dow)
-                            if (cyc?.types?.length) dayTypes = cyc.types
-                        }
+                        const dayTypes = rangeDay?.dayTypes || []
 
                         const completionStatus = rangeDay?.completionStatus
 

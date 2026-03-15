@@ -45,7 +45,7 @@ export default function SettingsModal({ open, onClose }: Props) {
         }))
     )
     const [loading, setLoading] = useState(false)
-    const { user, setUser, schedule, setSchedule } = useAppStore()
+    const { user, setUser, schedule, setSchedule, bumpSchedule } = useAppStore()
 
     // Load current settings when modal opens
     useEffect(() => {
@@ -80,9 +80,10 @@ export default function SettingsModal({ open, onClose }: Props) {
         try {
             const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(selectedExam._id)
             const examId = isValidObjectId ? selectedExam._id : undefined
-            await authApi.updateMe({ examId })
+            await authApi.updateMe({ examId, examName: selectedExam.name })
             const meRes = await authApi.me()
             setUser(meRes.data)
+            bumpSchedule()
             toast.success('Course updated!', { style: { background: '#111', color: '#f59e0b', border: '1px solid #222' } })
             onClose()
         } catch {
@@ -98,6 +99,7 @@ export default function SettingsModal({ open, onClose }: Props) {
             // Try to update existing schedule
             const res = await scheduleApi.update({ cyclePattern, repeatWeekly })
             setSchedule(res.data)
+            bumpSchedule()
             toast.success('Timetable updated!', { style: { background: '#111', color: '#f59e0b', border: '1px solid #222' } })
             onClose()
         } catch (e: any) {
@@ -113,6 +115,7 @@ export default function SettingsModal({ open, onClose }: Props) {
                         repeatWeekly,
                     })
                     setSchedule(res.data)
+                    bumpSchedule()
                     toast.success('Timetable saved!', { style: { background: '#111', color: '#f59e0b', border: '1px solid #222' } })
                     onClose()
                 } catch {
